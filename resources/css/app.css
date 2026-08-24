@@ -1,0 +1,109 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =========================================
+   GLOBAL MOBILE RESPONSIVE FIX
+   ========================================= */
+
+@media (max-width: 768px) {
+
+    html,
+    body {
+        width: 100%;
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+
+    /* Main content should never exceed phone width */
+    .flex-1 {
+        min-width: 0 !important;
+        max-width: 100% !important;
+    }
+
+    /* ================================
+       RESPONSIVE GRIDS
+       ================================ */
+
+    .grid-cols-5,
+    .grid-cols-4,
+    .grid-cols-3,
+    .grid-cols-2 {
+        grid-template-columns: minmax(0, 1fr) !important;
+    }
+
+    /* ================================
+       GRID CHILDREN
+       ================================ */
+
+    .grid > * {
+        min-width: 0 !important;
+        max-width: 100% !important;
+    }
+
+    /* ================================
+       FLEX CONTENT
+       ================================ */
+
+    .flex-row {
+        flex-wrap: wrap;
+    }
+
+    /* ================================
+       FORMS
+       ================================ */
+
+    input,
+    select,
+    textarea {
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+
+    /* ================================
+       TABLES
+       ================================ */
+
+    .overflow-x-auto {
+        max-width: 100%;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    table {
+        min-width: 600px;
+    }
+
+    /* ================================
+       CHARTS
+       ================================ */
+
+    canvas {
+        max-width: 100% !important;
+    }
+
+    /* ================================
+       LARGE HEADINGS
+       ================================ */
+
+    h1 {
+        max-width: 100%;
+        overflow-wrap: break-word;
+    }
+
+    h2,
+    h3 {
+        max-width: 100%;
+        overflow-wrap: break-word;
+    }
+
+    /* ================================
+       PREVENT LONG TEXT OVERFLOW
+       ================================ */
+
+    p,
+    span,
+    label {
+        overflow-wrap: break-word;
+    }
+}
