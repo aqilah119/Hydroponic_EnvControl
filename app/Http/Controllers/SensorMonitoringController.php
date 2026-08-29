@@ -324,7 +324,10 @@ while (($row = fgetcsv($file)) !== false)
 
     $batch[] = [
 
-        'timestamp' => $data['timestamp'],
+        'timestamp' => \Carbon\Carbon::createFromFormat(
+    'd/m/Y H:i',
+    trim($data['timestamp'])
+)->format('Y-m-d H:i:s'),
 
         'dht_temp' => $data['DHT_temp'],
 
