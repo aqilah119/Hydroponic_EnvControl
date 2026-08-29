@@ -3,6 +3,7 @@ server {
     listen [::]:8080;
     server_name _;
     root /home/site/wwwroot/public;
+    client_max_body_size 20M;
 
     index index.php index.html;
 
