@@ -12,198 +12,194 @@ class PredictiveMonitoringController extends Controller
 {
     public function index()
     {
-  
-    $user = Auth::user();
+        $user = Auth::user();
 
-/* DEFAULT */
+        /* DEFAULT */
 
-$crop = request('crop', 'Pak Choy');
+        $crop = request('crop', 'Pak Choy');
 
-/* STAFF AUTO ASSIGNED */
+        /* STAFF AUTO ASSIGNED */
 
-if($user->role == 'staff')
-{
-    $staff = Staff::with('plant')
-    ->where('user_id', $user->id)
-    ->first();
+        if ($user->role == 'staff')
+        {
+            $staff = Staff::with('plant')
+                ->where('user_id', $user->id)
+                ->first();
 
-    if($staff)
-    {
-        $crop = $staff?->plant?->name;
-    }
-}
+            if ($staff)
+            {
+                $crop = $staff?->plant?->name;
+            }
+        }
 
-/* TABLE MAPPING */
+        /* TABLE MAPPING */
 
-$table = 'sensor_logs';
+        $table = 'sensor_logs';
 
-if($crop == 'Lettuce')
-{
-    $table = 'sensor_logs_lettuce';
-}
-elseif($crop == 'Chili')
-{
-    $table = 'sensor_logs_chili';
-}
-    $date = request('date');
-    $session = request('session');
-       $date = request('date');
-$session = request('session');
+        if ($crop == 'Lettuce')
+        {
+            $table = 'sensor_logs_lettuce';
+        }
+        elseif ($crop == 'Chili')
+        {
+            $table = 'sensor_logs_chili';
+        }
 
-if (!$session)
-{
-    $session = 'am';
-}
+        $date = request('date');
+        $session = request('session');
 
-if ($session == 'am')
-{
-    $forecastSession = 'Next Day AM Session';
-    $forecastRange = '12:00 AM - 11:59 AM';
-}
-else
-{
-    $forecastSession = 'Next Day PM Session';
-    $forecastRange = '12:00 PM - 11:59 PM';
-}
+        if (!$session)
+        {
+            $session = 'am';
+        }
 
-// 🔥 DEFAULT DATE
-if (!$date)
-{
-    $date = '2023-12-26';
-}
+        if ($session == 'am')
+        {
+            $forecastSession = 'Next Day AM Session';
+            $forecastRange = '12:00 AM - 11:59 AM';
+        }
+        else
+        {
+            $forecastSession = 'Next Day PM Session';
+            $forecastRange = '12:00 PM - 11:59 PM';
+        }
 
-// 🔥 SENSOR QUERY
-$query = DB::table($table)
-    ->whereDate('timestamp', $date);
+        // DEFAULT DATE
 
-if ($session == 'am')
-{
-    $query->whereTime('timestamp', '>=', '00:00:00')
-          ->whereTime('timestamp', '<', '12:00:00');
-}
+        if (!$date)
+        {
+            $date = '2023-12-26';
+        }
 
-elseif ($session == 'pm')
-{
-    $query->whereTime('timestamp', '>=', '12:00:00')
-          ->whereTime('timestamp', '<', '24:00:00');
-}
+        // SENSOR QUERY
 
-// 🔥 GET DATA
-$data = $query
-    ->orderBy('timestamp', 'asc')
-    ->get();
+        $query = DB::table($table)
+            ->whereDate('timestamp', $date);
 
-// 🔥 SESSION TIME RANGE
-$startTime = null;
-$endTime = null;
+        if ($session == 'am')
+        {
+            $query->whereTime('timestamp', '>=', '00:00:00')
+                ->whereTime('timestamp', '<', '12:00:00');
+        }
 
-if ($data->count() > 0)
-{
-    $startTime = \Carbon\Carbon::parse(
-        $data->first()->timestamp
-    )->format('h:i A');
+        elseif ($session == 'pm')
+        {
+            $query->whereTime('timestamp', '>=', '12:00:00')
+                ->whereTime('timestamp', '<', '24:00:00');
+        }
 
-    $endTime = \Carbon\Carbon::parse(
-        $data->last()->timestamp
-    )->format('h:i A');
-}
+        // GET DATA
 
-      if ($data->count() < 2)
-{
-    return view(
-        'staff.predictive-monitoring',
-        [
+        $data = $query
+            ->orderBy('timestamp', 'asc')
+            ->get();
 
-            'current' => [],
-            'forecast' => [],
-            'risk' => [],
-            'overallRisk' => null,
+        // SESSION TIME RANGE
 
-            'forecastSession' => $forecastSession,
-            'forecastRange' => $forecastRange,
+        $startTime = null;
+        $endTime = null;
 
-            'startTime' => null,
-            'endTime' => null
+        if ($data->count() > 0)
+        {
+            $startTime = \Carbon\Carbon::parse(
+                $data->first()->timestamp
+            )->format('h:i A');
 
-        ]
-    );
-}
+            $endTime = \Carbon\Carbon::parse(
+                $data->last()->timestamp
+            )->format('h:i A');
+        }
 
-$historicalData = DB::table($table)
-    ->whereDate('timestamp', '>=', '2023-11-26')
-    ->whereDate('timestamp', '<=', '2023-12-26')
-    ->orderBy('timestamp', 'asc')
-    ->get();
+        if ($data->count() < 2)
+        {
+            return view(
+                'staff.predictive-monitoring',
+                [
 
-// RUN PYTHON SCRIPT
+                    'current' => [],
+                    'forecast' => [],
+                    'risk' => [],
+                    'overallRisk' => null,
 
-$jsonData = json_encode(
-    $historicalData->toArray()
-);
+                    'forecastSession' => $forecastSession,
+                    'forecastRange' => $forecastRange,
 
-file_put_contents(
-    storage_path('app/sensor_data.json'),
-    $jsonData
-);
+                    'startTime' => null,
+                    'endTime' => null
 
+                ]
+            );
+        }
 
-$process = new Process([
+        $historicalData = DB::table($table)
+            ->whereDate('timestamp', '>=', '2023-11-26')
+            ->whereDate('timestamp', '<=', '2023-12-26')
+            ->orderBy('timestamp', 'asc')
+            ->get();
 
-    'C:\Users\Asus\AppData\Local\Python\pythoncore-3.14-64\python.exe',
+        // RUN PYTHON SCRIPT
 
-    base_path('python/predict_environment.py'),
+        $jsonData = json_encode(
+            $historicalData->toArray()
+        );
 
-    storage_path('app/sensor_data.json'),
+        file_put_contents(
+            storage_path('app/sensor_data.json'),
+            $jsonData
+        );
 
-    $session,
+        $process = new Process([
 
-    $date
+            'python3',
 
-]);
+            base_path('python/predict_environment.py'),
 
-$process->run();
+            storage_path('app/sensor_data.json'),
 
-if (!$process->isSuccessful()) {
+            $session,
 
-    dd($process->getErrorOutput());
+            $date
 
-}
+        ]);
 
-$predictions = json_decode(
-    $process->getOutput(),
-    true
-);
+        $process->run();
 
+        if (!$process->isSuccessful())
+        {
+            dd($process->getErrorOutput());
+        }
 
-$current = $predictions['current'] ?? [];
+        $predictions = json_decode(
+            $process->getOutput(),
+            true
+        );
 
-$forecast = $predictions['forecast'] ?? [];
+        $current = $predictions['current'] ?? [];
 
-$risk = $predictions['risk'] ?? [];
+        $forecast = $predictions['forecast'] ?? [];
 
-$overallRisk = $predictions['overall_risk'] ?? null;
+        $risk = $predictions['risk'] ?? [];
 
+        $overallRisk = $predictions['overall_risk'] ?? null;
 
+        // RETURN VIEW
 
+        return view(
+            'staff.predictive-monitoring',
+            compact(
 
-        // 🔥 RETURN VIEW
-      return view(
-    'staff.predictive-monitoring',
-    compact(
+                'crop',
+                'current',
+                'forecast',
+                'risk',
+                'overallRisk',
 
-        'crop',
-        'current',
-        'forecast',
-        'risk',
-        'overallRisk',
+                'forecastSession',
+                'forecastRange',
 
-        'forecastSession',
-        'forecastRange',
-
-        'startTime',
-        'endTime'
-    )
-);
-
+                'startTime',
+                'endTime'
+            )
+        );
     }
 }
